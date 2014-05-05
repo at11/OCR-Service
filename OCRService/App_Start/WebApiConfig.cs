@@ -16,8 +16,7 @@ namespace OCRService
 
             config.Routes.MapHttpRoute(
                 name: "DefaultApi",
-                routeTemplate: "api/{controller}/{path}",
-                defaults: new { path = RouteParameter.Optional }
+                routeTemplate: "api/{controller}/{action}"
             );
         }
     }

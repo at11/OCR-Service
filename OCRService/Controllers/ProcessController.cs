@@ -13,16 +13,38 @@ namespace OCRService.Controllers
 {
     public class ProcessController : ApiController
     {
-        public string Get(string path)
+        [HttpPost]
+        public HttpResponseMessage Url([FromBody]string path)
         {
-            System.Net.WebClient objWebClient = new System.Net.WebClient();
-            var targetFile = HostingEnvironment.MapPath(@"~/PicturesToProcess/") + Path.GetRandomFileName() + Path.GetExtension(path);
-            objWebClient.DownloadFile(path, targetFile);
-            Bitmap picture = new Bitmap(targetFile);
-            string result = Process(picture);
-            picture.Dispose();
-            File.Delete(targetFile);
-            return result;
+            try
+            {
+                System.Net.WebClient objWebClient = new System.Net.WebClient();
+                var targetFile = HostingEnvironment.MapPath(@"~/PicturesToProcess/") + Path.GetRandomFileName() + Path.GetExtension(path);
+                objWebClient.DownloadFile(path, targetFile);
+                Bitmap picture = new Bitmap(targetFile);
+                string result = Process(picture);
+                picture.Dispose();
+                File.Delete(targetFile);
+                var resp = new HttpResponseMessage(HttpStatusCode.OK);
+                resp.Content = new StringContent(result);
+                return resp;
+            }
+            catch { throw new HttpResponseException(Request.CreateErrorResponse(HttpStatusCode.InternalServerError, new Exception("Error"))); }
+        }
+
+        [HttpPost]
+        public HttpResponseMessage Encoded([FromBody]string pictureString)
+        {
+            try
+            {
+                pictureString=pictureString.Replace("data:image/png;base64,","");
+                Bitmap picture = Base64StringToBitmap(pictureString);
+                string result = Process(picture);
+                var resp = new HttpResponseMessage(HttpStatusCode.OK);
+                resp.Content = new StringContent(result);
+                return resp;
+            }
+            catch { throw new HttpResponseException(Request.CreateErrorResponse(HttpStatusCode.InternalServerError, new Exception("Error"))); }
         }
 
         private string Process(Bitmap picture)
@@ -37,6 +59,24 @@ namespace OCRService.Controllers
                     }
                 }
             }
+        }
+
+        public Bitmap Base64StringToBitmap(string base64String)
+        {
+            Bitmap bmpReturn = null;
+
+            byte[] byteBuffer = Convert.FromBase64String(base64String);
+            MemoryStream memoryStream = new MemoryStream(byteBuffer);
+
+            memoryStream.Position = 0;
+
+            bmpReturn = (Bitmap)Bitmap.FromStream(memoryStream);
+
+            memoryStream.Close();
+            memoryStream = null;
+            byteBuffer = null;
+
+            return bmpReturn;
         }
     }
 }
