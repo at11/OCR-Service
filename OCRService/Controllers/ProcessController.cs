@@ -51,6 +51,8 @@ namespace OCRService.Controllers
         {
             using (var engine = new TesseractEngine(HostingEnvironment.MapPath(@"~/tessdata"), "slk", EngineMode.Default))
             {
+                engine.DefaultPageSegMode = PageSegMode.SingleBlock;
+                
                 using (var pix = PixConverter.ToPix(picture))
                 {
                     using (var page = engine.Process(pix))
